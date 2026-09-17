@@ -9,8 +9,8 @@ from backend.core.config import settings
 
 engine = create_async_engine(
     settings.database_url,
-    connect_args={"ssl": True},
     echo=False,
+    pool_pre_ping=True,
 )
 
 

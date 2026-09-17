@@ -10,6 +10,13 @@ class ContactCreate(BaseModel):
     phone: str | None = None
 
 
+class ContactUpdate(BaseModel):
+    name: str | None = None
+    company: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+
+
 class ContactResponse(BaseModel):
     id: str
     name: str

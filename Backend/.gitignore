@@ -22,3 +22,7 @@ htmlcov/
 # IDE
 .vscode/
 .idea/
+
+# Temporary backend backups
+backend-source.zip
+backend_code.txt
