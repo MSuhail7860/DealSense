@@ -5,6 +5,7 @@ from backend.api.v1.auth import router as auth_router
 from backend.api.v1.contacts import router as contacts_router
 from backend.api.v1.deals import router as deals_router
 from backend.api.v1.interactions import router as interactions_router
+from backend.api.v1.deal_scores import router as deal_scores_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -29,6 +30,11 @@ app.include_router(
 
 app.include_router(
     interactions_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    deal_scores_router, 
     prefix="/api/v1",
 )
 
