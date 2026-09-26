@@ -1,0 +1,19 @@
+[project]
+name = "ml-service"
+version = "0.1.0"
+description = "DealSense ML Service"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "scikit-learn",
+    "xgboost",
+    "pandas",
+    "numpy",
+    "joblib",
+    "shap",
+    "faker",
+    "pytest",
+    "matplotlib>=3.11.2",
+]

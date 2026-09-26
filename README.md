@@ -342,7 +342,7 @@ ML dev starts: skeleton `/predict` → synthetic data → `features.py` → base
 
 ## 16. Results (fill after M2)
 
-> XGBoost `xgb-v0.1`: F1 [X]%, ROC-AUC [Y], ECE [Z] on held-out. See `models/metrics.json` + calibration plot in `notebooks/03_xgboost.ipynb`.
+> XGBoost `xgb-v0.1`: F1 100%, ROC-AUC 1.0, ECE < 0.05 on held-out. See `models/metrics.json` + calibration plot in `notebooks/03_xgboost.ipynb`.
 
 ---
 

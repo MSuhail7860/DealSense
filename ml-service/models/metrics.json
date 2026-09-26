@@ -1,0 +1,7 @@
+{
+  "model_version": "xgb-v0.1",
+  "dataset": "data/maven/maven_mapped.json",
+  "f1": 1.0,
+  "roc_auc": 1.0,
+  "brier": 1.288062257230309e-07
+}
