@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
 
     database_url: str
+    redis_url: str
 
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"

@@ -13,6 +13,7 @@ from backend.schemas.interaction import (
     InteractionCreate,
     InteractionResponse,
 )
+from backend.tasks import process_interaction
 
 
 router = APIRouter(
@@ -73,6 +74,9 @@ async def create_interaction(
     await db.commit()
     await db.refresh(interaction)
 
+    # Send the interaction to the background worker
+    process_interaction.delay(str(interaction.id))
+
     return interaction_response(interaction)
 
 
@@ -109,4 +113,7 @@ async def get_interactions(
 
     interactions = result.scalars().all()
 
-    return [interaction_response(interaction) for interaction in interactions]
+    return [
+        interaction_response(interaction)
+        for interaction in interactions
+    ]
