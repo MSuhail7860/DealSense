@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.redis import redis_client
 from backend.models.deal import Deal
 from backend.models.deal_score import DealScore
 from backend.services.deal_features import calculate_deal_features
@@ -27,5 +28,10 @@ async def calculate_and_save_deal_score(
     db.add(score)
     await db.commit()
     await db.refresh(score)
+
+    await redis_client.publish(
+        "deal_scores",
+        str(score.id),
+    )
 
     return score
