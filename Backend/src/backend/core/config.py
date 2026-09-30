@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    cohere_api_key: str | None = None
+    cohere_embed_model: str = "embed-v4.0"
+    cohere_embed_dimension: int = 1024
+    cohere_chat_model: str = "command-a-03-2025"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

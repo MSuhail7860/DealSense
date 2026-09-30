@@ -13,6 +13,7 @@ from backend.schemas.interaction import (
     InteractionCreate,
     InteractionResponse,
 )
+from backend.services.embedding_service import generate_embedding
 from backend.tasks import process_interaction
 
 
@@ -61,12 +62,16 @@ async def create_interaction(
             detail="Deal not found",
         )
 
+    # Generate embedding for the interaction content
+    embedding = generate_embedding(data.content)
+
     interaction = Interaction(
         deal_id=deal.id,
         type=data.type,
         content=data.content,
         sentiment_score=data.sentiment_score,
         response_time_minutes=data.response_time_minutes,
+        embedding=embedding,
     )
 
     db.add(interaction)

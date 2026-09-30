@@ -7,6 +7,7 @@ from backend.api.v1.deals import router as deals_router
 from backend.api.v1.interactions import router as interactions_router
 from backend.api.v1.deal_scores import router as deal_scores_router
 from backend.api.v1.websocket import router as websocket_router
+from backend.api.v1.copilot import router as copilot_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -36,6 +37,11 @@ app.include_router(
 
 app.include_router(
     deal_scores_router, 
+    prefix="/api/v1",
+)
+
+app.include_router(
+    copilot_router,
     prefix="/api/v1",
 )
 
