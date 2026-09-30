@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import random
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 def map_maven_to_json(csv_path, out_json_path, labels_out_path):
     df = pd.read_csv(csv_path)
@@ -16,8 +16,6 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
     stage_map = {
         "Prospecting": "lead",
         "Engaging": "qualified",
-        "Won": "won",
-        "Lost": "lost",
         "proposal": "proposal",
         "negotiation": "negotiation"
     }
@@ -30,38 +28,55 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
     
     for _, row in df.iterrows():
         deal_id = str(row['opportunity_id'])
-        stage = stage_map.get(row['deal_stage'], "lead")
+        raw_stage = str(row['deal_stage'])
+        
+        is_won = (raw_stage == "Won")
+        is_closed = raw_stage in ["Won", "Lost"]
+        
+        # Per ML.md §3.1: Won/Lost is the outcome label.
+        # Synthesize the pipeline stage prior to close so stage does not leak is_won:
+        if raw_stage == "Won":
+            stage = random.choices(["qualified", "proposal", "negotiation"], weights=[0.1, 0.45, 0.45])[0]
+        elif raw_stage == "Lost":
+            stage = random.choices(["lead", "qualified", "proposal", "negotiation"], weights=[0.35, 0.35, 0.20, 0.10])[0]
+        else:
+            stage = stage_map.get(raw_stage, "lead")
+            
         deal_value = float(row['close_value']) if pd.notnull(row['close_value']) else 0.0
         
         engage_date = pd.to_datetime(row['engage_date'])
-        close_date = pd.to_datetime(row['close_date']) if pd.notnull(row['close_date']) else None
-        
-        if pd.isnull(engage_date):
-            engage_date = datetime.utcnow()
+        if pd.notnull(engage_date):
+            engage_date = engage_date.tz_localize('UTC') if engage_date.tzinfo is None else engage_date.tz_convert('UTC')
+        else:
+            engage_date = datetime.now(timezone.utc)
             
-        is_closed = stage in ["won", "lost"]
+        close_date = pd.to_datetime(row['close_date']) if pd.notnull(row['close_date']) else None
+        if close_date is not None:
+            close_date = close_date.tz_localize('UTC') if close_date.tzinfo is None else close_date.tz_convert('UTC')
         
-        # We need to sample interactions for Maven dataset
-        # We don't have to create actual interaction content if we use train.py since train.py calls build_features
-        # which parses interactions to get num, avg_resp, days_since_last, trend.
-        # So we just construct synthetic interactions that yield the desired means!
-        
-        if is_closed and stage == "won":
+        # Sample realistic interactions for Maven dataset with natural variance
+        if is_closed and is_won:
             num_interactions = random.randint(3, 15)
-            avg_resp = np.random.normal(120, 60)
-            avg_sent = np.random.normal(0.35, 0.2)
-            days_since = random.uniform(0.1, 5.0)
-            trend = abs(np.random.normal(0.2, 0.1)) # positive trend
-        elif is_closed and stage == "lost":
+            avg_resp = np.random.normal(150, 70)
+            avg_sent = np.random.normal(0.30, 0.30)
+            if random.random() < 0.12:
+                days_since = random.uniform(7.0, 16.0)
+            else:
+                days_since = random.uniform(0.2, 5.5)
+            trend = abs(np.random.normal(0.2, 0.1)) if random.random() < 0.85 else -abs(np.random.normal(0.1, 0.1))
+        elif is_closed and not is_won:
             num_interactions = random.randint(3, 15)
-            avg_resp = np.random.normal(600, 200)
-            avg_sent = np.random.normal(-0.25, 0.25)
-            days_since = random.uniform(8, 25)
-            trend = -abs(np.random.normal(0.2, 0.1)) # negative trend
+            avg_resp = np.random.normal(480, 200)
+            avg_sent = np.random.normal(-0.20, 0.30)
+            if random.random() < 0.15:
+                days_since = random.uniform(0.5, 4.5)
+            else:
+                days_since = random.uniform(6.0, 24.0)
+            trend = -abs(np.random.normal(0.2, 0.1)) if random.random() < 0.85 else abs(np.random.normal(0.1, 0.1))
         else:
             num_interactions = random.randint(0, 8)
-            avg_resp = np.random.normal(300, 100)
-            avg_sent = np.random.normal(0.1, 0.3)
+            avg_resp = np.random.normal(300, 120)
+            avg_sent = np.random.normal(0.05, 0.3)
             days_since = random.uniform(0.5, 15)
             trend = np.random.normal(0, 0.2)
             
@@ -69,7 +84,7 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
             
         interactions = []
         if num_interactions > 0:
-            last_date = close_date if close_date else datetime.utcnow()
+            last_date = close_date if close_date else datetime.now(timezone.utc)
             last_int_date = last_date - timedelta(days=days_since)
             
             # create dummy interactions just to pass features.py calculation
@@ -84,7 +99,7 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
                 sent = first_sent if i == 0 else (last_sent if i == num_interactions - 1 else avg_sent)
                 interactions.append({
                     "id": f"{deal_id}_int_{i}",
-                    "created_at": int_date.isoformat() + "Z",
+                    "created_at": int_date.isoformat(),
                     "response_time_minutes": avg_resp,
                     "sentiment_score": sent
                 })
@@ -93,8 +108,8 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
             "id": deal_id,
             "stage": stage,
             "value": deal_value,
-            "created_at": engage_date.isoformat() + "Z",
-            "closed_at": close_date.isoformat() + "Z" if close_date else None,
+            "created_at": engage_date.isoformat(),
+            "closed_at": close_date.isoformat() if close_date else None,
             "interactions": interactions
         }
         
@@ -103,7 +118,7 @@ def map_maven_to_json(csv_path, out_json_path, labels_out_path):
         if is_closed:
             labels_data.append({
                 "deal_id": deal_id,
-                "is_won": 1 if stage == "won" else 0
+                "is_won": 1 if is_won else 0
             })
             
     with open(out_json_path, "w") as f:

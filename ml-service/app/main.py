@@ -55,8 +55,8 @@ def predict(request: PredictRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
-    win_probability = max(0.0, min(1.0, float(y_prob)))
-    churn_risk = 1.0 - win_probability
+    win_probability = round(max(0.0, min(1.0, float(y_prob))), 4)
+    churn_risk = round(1.0 - win_probability, 4)
     
     return PredictResponse(
         win_probability=win_probability,

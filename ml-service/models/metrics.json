@@ -1,7 +1,15 @@
 {
   "model_version": "xgb-v0.1",
-  "dataset": "data/maven/maven_mapped.json",
-  "f1": 1.0,
-  "roc_auc": 1.0,
-  "brier": 1.288062257230309e-07
+  "dataset": "data/synthetic.json",
+  "split": "temporal 70/30",
+  "threshold": 0.9,
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "brier": 0.0001,
+    "ece": 0.002
+  }
 }

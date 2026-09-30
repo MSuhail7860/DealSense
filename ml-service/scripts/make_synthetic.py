@@ -30,14 +30,21 @@ def generate_synthetic_data(deals_count, min_inter, max_inter, won_rate, out_pat
     for i in range(deals_count):
         deal_id = str(uuid.uuid4())
         
-        # Determine if this will be a closed deal (won/lost) or open
+        # Determine outcome: is_won
+        is_won = random.random() < won_rate
         is_closed = random.random() < 0.7  # 70% closed
-        if is_closed:
-            is_won = random.random() < won_rate
-            stage = "won" if is_won else "lost"
+        
+        # In a CRM, active/snapshot stages are lead, qualified, proposal, negotiation.
+        # Won deals predominantly reached proposal or negotiation.
+        # Lost deals dropped out across lead, qualified, proposal, or negotiation.
+        if is_won:
+            stage_choices = ["qualified", "proposal", "negotiation", "won"]
+            stage_weights = [0.10, 0.40, 0.40, 0.10]
         else:
-            stage = random.choices(["lead", "qualified", "proposal", "negotiation"], weights=[0.3, 0.3, 0.2, 0.2])[0]
-            is_won = False # dummy
+            stage_choices = ["lead", "qualified", "proposal", "negotiation", "lost"]
+            stage_weights = [0.35, 0.35, 0.15, 0.05, 0.10]
+            
+        stage = random.choices(stage_choices, weights=stage_weights)[0]
         
         # deal_value: lognormal (median 25k, tail to 250k)
         # log(25000) ~ 10.12, sigma ~ 1.0
@@ -68,27 +75,24 @@ def generate_synthetic_data(deals_count, min_inter, max_inter, won_rate, out_pat
             ]
             content = random.choice(templates)
             
-            if is_closed and stage == "won":
-                resp_min = clip(np.random.normal(120, 60), 15, 1440)
-                sent = clip(np.random.normal(0.35, 0.2), -1, 1)
-            elif is_closed and stage == "lost":
-                resp_min = clip(np.random.normal(600, 200), 15, 2880)
-                sent = clip(np.random.normal(-0.25, 0.25), -1, 1)
+            if is_won:
+                resp_min = clip(np.random.normal(140, 70), 15, 1440)
+                sent = clip(np.random.normal(0.30, 0.30), -1, 1)
+                # Most won deals have recent contact, but ~12% have procurement delays
+                if random.random() < 0.12:
+                    gap_days = random.uniform(7.0, 16.0)
+                else:
+                    gap_days = random.uniform(0.2, 5.5)
             else:
-                resp_min = clip(np.random.normal(300, 100), 15, 1440)
-                sent = clip(np.random.normal(0.1, 0.3), -1, 1)
-            
-            # temporal spread
-            if is_closed and stage == "won":
-                # days since last <= 5
-                gap_days = random.uniform(0.1, 5.0)
-            elif is_closed and stage == "lost":
-                gap_days = random.uniform(8, 25)
-            else:
-                gap_days = random.uniform(0.5, 15)
+                resp_min = clip(np.random.normal(520, 220), 15, 2880)
+                sent = clip(np.random.normal(-0.20, 0.30), -1, 1)
+                # Most lost deals have stalled, but ~15% had a recent rejection/breakup interaction
+                if random.random() < 0.15:
+                    gap_days = random.uniform(0.5, 4.0)
+                else:
+                    gap_days = random.uniform(6.0, 24.0)
                 
             int_time = last_interaction_time + timedelta(days=gap_days)
-            # Cannot exceed 'now' (mostly handled if days_ago is large enough, but we should clip)
             if int_time > now:
                 int_time = now - timedelta(hours=random.uniform(1, 24))
             
@@ -104,18 +108,18 @@ def generate_synthetic_data(deals_count, min_inter, max_inter, won_rate, out_pat
                 "created_at": int_time.isoformat()
             })
             
-        # sort interactions just to be sure
         interactions.sort(key=lambda x: x["created_at"])
         
         # fix sentiment trend for won/lost
-        if is_closed and stage == "won" and len(interactions) >= 2:
-            # trend positive: make last sentiment higher than first
-            if interactions[-1]["sentiment_score"] < interactions[0]["sentiment_score"]:
-                interactions[-1]["sentiment_score"], interactions[0]["sentiment_score"] = interactions[0]["sentiment_score"], interactions[-1]["sentiment_score"]
-        elif is_closed and stage == "lost" and len(interactions) >= 2:
-            # trend negative
-            if interactions[-1]["sentiment_score"] > interactions[0]["sentiment_score"]:
-                interactions[-1]["sentiment_score"], interactions[0]["sentiment_score"] = interactions[0]["sentiment_score"], interactions[-1]["sentiment_score"]
+        if len(interactions) >= 2:
+            if is_won and random.random() < 0.85:
+                # trend positive: make last sentiment higher than first
+                if interactions[-1]["sentiment_score"] < interactions[0]["sentiment_score"]:
+                    interactions[-1]["sentiment_score"], interactions[0]["sentiment_score"] = interactions[0]["sentiment_score"], interactions[-1]["sentiment_score"]
+            elif not is_won and random.random() < 0.85:
+                # trend negative: make last sentiment lower than first
+                if interactions[-1]["sentiment_score"] > interactions[0]["sentiment_score"]:
+                    interactions[-1]["sentiment_score"], interactions[0]["sentiment_score"] = interactions[0]["sentiment_score"], interactions[-1]["sentiment_score"]
 
         closed_at = None
         if is_closed:
@@ -134,11 +138,10 @@ def generate_synthetic_data(deals_count, min_inter, max_inter, won_rate, out_pat
         
         deals_data.append(deal)
         
-        if is_closed:
-            labels_data.append({
-                "deal_id": deal_id,
-                "is_won": 1 if stage == "won" else 0
-            })
+        labels_data.append({
+            "deal_id": deal_id,
+            "is_won": 1 if is_won else 0
+        })
             
     # Write JSONL
     with open(out_file, "w") as f:
