@@ -1,0 +1,6 @@
+/* App container base styles */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

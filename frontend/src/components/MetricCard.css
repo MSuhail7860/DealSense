@@ -1,0 +1,90 @@
+.metric-card {
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.metric-icon-box {
+  color: #818CF8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  font-family: var(--font-sans);
+}
+
+.metric-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.775rem;
+}
+
+.metric-trend {
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.trend-positive {
+  background: var(--accent-emerald-light);
+  color: #6EE7B7;
+}
+
+.trend-negative {
+  background: var(--accent-rose-light);
+  color: #FDA4AF;
+}
+
+.trend-label,
+.metric-subtitle {
+  color: var(--text-muted);
+}
+
+/* Variants */
+.variant-emerald {
+  border-left: 3px solid var(--accent-emerald);
+}
+.variant-rose {
+  border-left: 3px solid var(--accent-rose);
+}
+.variant-primary {
+  border-left: 3px solid var(--primary);
+}
+.variant-amber {
+  border-left: 3px solid var(--accent-amber);
+}
