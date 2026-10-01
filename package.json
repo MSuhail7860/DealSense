@@ -1,0 +1,15 @@
+{
+  "name": "dealsense",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DealSense — AI-Native CRM & Deal Intelligence Platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "install:frontend": "npm --prefix frontend install"
+  },
+  "keywords": ["ai", "crm", "machine-learning", "xgboost", "react", "vite"],
+  "author": "",
+  "license": "MIT"
+}

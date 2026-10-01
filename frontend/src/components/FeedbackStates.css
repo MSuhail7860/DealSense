@@ -1,0 +1,250 @@
+/* Loading, Error, Skeleton, and Empty state styles */
+
+/* Spinner */
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.spinner-orbit {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.spinner-lg .spinner-orbit {
+  width: 64px;
+  height: 64px;
+}
+
+.spinner-sm .spinner-orbit {
+  width: 28px;
+  height: 28px;
+}
+
+.spinner-core {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--primary);
+  border-right-color: var(--secondary);
+  animation: spin 0.9s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+}
+
+.spinner-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.spinner-message {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.spinner-subtext {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Skeleton */
+.skeleton-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.skeleton-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-titles {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title-line {
+  height: 16px;
+  width: 50%;
+}
+
+.subtitle-line {
+  height: 12px;
+  width: 30%;
+}
+
+.skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.skeleton-line {
+  height: 12px;
+}
+
+.skeleton-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.skeleton-button {
+  width: 110px;
+  height: 36px;
+  border-radius: var(--radius-md);
+}
+
+/* Error Alert */
+.error-alert {
+  padding: 1.25rem 1.5rem;
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(30, 15, 25, 0.85);
+  margin-bottom: 1.5rem;
+}
+
+.error-alert-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.error-icon-wrapper {
+  color: var(--accent-rose);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.error-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FDA4AF;
+}
+
+.error-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  line-height: 1.45;
+}
+
+.error-alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.toggle-details-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.toggle-details-btn:hover {
+  color: var(--text-primary);
+}
+
+.error-technical-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #090B14;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  overflow-x: auto;
+}
+
+.error-technical-box pre {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #FDA4AF;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  margin: 1.5rem 0;
+}
+
+.empty-state-icon-box {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-xl);
+  background: var(--primary-light);
+  color: #818CF8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state-action {
+  margin-top: 0.5rem;
+}
