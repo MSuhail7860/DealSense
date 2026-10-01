@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cpu,
-  Sparkles,
   Zap,
   RotateCcw,
-  AlertCircle,
-  HelpCircle,
-  TrendingUp,
   BarChart2,
   Clock,
-  Layers
+  Layers,
+  Database
 } from 'lucide-react';
 import InputField from '../components/InputField';
 import SelectField from '../components/SelectField';
@@ -22,76 +19,26 @@ import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 import { STAGES } from '../utils/validation';
 import { usePrediction } from '../hooks/usePrediction';
-import { getSentimentDetails, formatDuration } from '../utils/formatters';
+import { getRealDeals } from '../api/predictionApi';
+import { getSentimentDetails, formatDuration, formatCurrency } from '../utils/formatters';
 import './Analyze.css';
 
 const DEFAULT_FEATURES = {
-  deal_value: 50000,
-  stage: 'proposal',
-  days_in_stage: 12,
-  num_interactions: 8,
-  avg_response_min: 320,
-  days_since_last: 3,
-  sentiment_trend: 0.15,
+  deal_value: 36951.86,
+  stage: 'lead',
+  days_in_stage: 20,
+  num_interactions: 14,
+  avg_response_min: 476,
+  days_since_last: 1,
+  sentiment_trend: -0.12,
 };
-
-const PRESETS = [
-  {
-    name: 'High-Intent Proposal',
-    description: 'Strong engagement and positive sentiment',
-    data: {
-      deal_value: 85000,
-      stage: 'proposal',
-      days_in_stage: 5,
-      num_interactions: 15,
-      avg_response_min: 45,
-      days_since_last: 1,
-      sentiment_trend: 0.65,
-    },
-  },
-  {
-    name: 'Stalled Negotiation',
-    description: 'High value with lagging response and negative drift',
-    data: {
-      deal_value: 140000,
-      stage: 'negotiation',
-      days_in_stage: 32,
-      num_interactions: 9,
-      avg_response_min: 840,
-      days_since_last: 16,
-      sentiment_trend: -0.45,
-    },
-  },
-  {
-    name: 'Early Qualified Lead',
-    description: 'Promising start in early qualification',
-    data: {
-      deal_value: 35000,
-      stage: 'qualified',
-      days_in_stage: 4,
-      num_interactions: 4,
-      avg_response_min: 120,
-      days_since_last: 2,
-      sentiment_trend: 0.20,
-    },
-  },
-  {
-    name: 'At-Risk Enterprise',
-    description: 'Critical deal with prolonged stagnation',
-    data: {
-      deal_value: 210000,
-      stage: 'proposal',
-      days_in_stage: 45,
-      num_interactions: 6,
-      avg_response_min: 1440,
-      days_since_last: 22,
-      sentiment_trend: -0.70,
-    },
-  },
-];
 
 export default function Analyze() {
   const [features, setFeatures] = useState(DEFAULT_FEATURES);
+  const [realDeals, setRealDeals] = useState([]);
+  const [selectedDealId, setSelectedDealId] = useState('');
+  const [loadingDeals, setLoadingDeals] = useState(true);
+
   const {
     loading,
     error,
@@ -100,6 +47,58 @@ export default function Analyze() {
     executePrediction,
     resetPrediction,
   } = usePrediction();
+
+  // Fetch real deals from live ML / CRM service
+  useEffect(() => {
+    let mounted = true;
+    async function loadDeals() {
+      try {
+        setLoadingDeals(true);
+        const data = await getRealDeals(40);
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          setRealDeals(data);
+          // Set first deal as initial selection
+          const first = data[0];
+          setSelectedDealId(first.id);
+          if (first.features) {
+            setFeatures({
+              deal_value: first.features.deal_value || first.value,
+              stage: first.features.stage || first.stage,
+              days_in_stage: first.features.days_in_stage ?? 10,
+              num_interactions: first.features.num_interactions ?? first.num_interactions,
+              avg_response_min: Math.round(first.features.avg_response_min ?? 200),
+              days_since_last: first.features.days_since_last ?? 2,
+              sentiment_trend: Number(parseFloat(first.features.sentiment_trend ?? 0).toFixed(2)),
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load real deals:', err);
+      } finally {
+        if (mounted) setLoadingDeals(false);
+      }
+    }
+    loadDeals();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleSelectRealDeal = (e) => {
+    const dealId = e.target.value;
+    setSelectedDealId(dealId);
+    const deal = realDeals.find((d) => d.id === dealId);
+    if (deal && deal.features) {
+      setFeatures({
+        deal_value: deal.features.deal_value || deal.value,
+        stage: deal.features.stage || deal.stage,
+        days_in_stage: deal.features.days_in_stage ?? 10,
+        num_interactions: deal.features.num_interactions ?? deal.num_interactions,
+        avg_response_min: Math.round(deal.features.avg_response_min ?? 200),
+        days_since_last: deal.features.days_since_last ?? 2,
+        sentiment_trend: Number(parseFloat(deal.features.sentiment_trend ?? 0).toFixed(2)),
+      });
+      resetPrediction();
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -116,16 +115,13 @@ export default function Analyze() {
     }));
   };
 
-  const handlePresetSelect = (preset) => {
-    setFeatures(preset.data);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     await executePrediction(features);
   };
 
   const sentimentInfo = getSentimentDetails(features.sentiment_trend);
+  const activeDeal = realDeals.find((d) => d.id === selectedDealId);
 
   return (
     <div className="page-container analyze-page">
@@ -134,35 +130,68 @@ export default function Analyze() {
         <div className="analyze-header">
           <div className="analyze-title-group">
             <span className="badge badge-primary">
-              <Cpu size={14} /> ML Inference Engine
+              <Cpu size={14} /> ML Inference Engine (xgb-v0.1)
             </span>
             <h1 className="analyze-heading">Deal Intelligence & Win Scoring</h1>
             <p className="analyze-subheading">
-              Input behavioral CRM telemetry into the calibrated XGBoost binary classifier (xgb-v0.1)
-              to predict deal outcome probability and identify churn risk indicators.
+              Evaluating real CRM opportunities using the trained XGBoost binary classification model.
+              Select any live opportunity from the dataset or adjust behavioral features for scenario scoring.
             </p>
           </div>
 
-          {/* Quick Presets Bar */}
+          {/* Real Opportunity Selector Bar */}
           <div className="presets-bar glass-card">
             <span className="presets-label">
-              <Zap size={14} className="text-primary" /> Load Scenario:
+              <Database size={15} className="text-primary" /> Live CRM Opportunity:
             </span>
-            <div className="presets-list">
-              {PRESETS.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  className="preset-btn"
-                  onClick={() => handlePresetSelect(preset)}
-                  title={preset.description}
+            {loadingDeals ? (
+              <span className="text-secondary text-sm">Loading dataset opportunities from ML service...</span>
+            ) : realDeals.length > 0 ? (
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+                <select
+                  id="real-deal-selector"
+                  aria-label="Select live CRM opportunity from dataset"
+                  value={selectedDealId}
+                  onChange={handleSelectRealDeal}
+                  className="form-select"
+                  style={{
+                    maxWidth: '480px',
+                    width: '100%',
+                    minHeight: '44px',
+                    padding: '0.5rem 0.75rem',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    borderColor: 'var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                  }}
                 >
-                  {preset.name}
-                </button>
-              ))}
-            </div>
+                  {realDeals.map((deal) => (
+                    <option key={deal.id} value={deal.id}>
+                      {deal.title} ({formatCurrency(deal.value)} • {deal.stage.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+                {activeDeal && (
+                  <span className="badge badge-neutral" style={{ fontSize: '0.8rem' }}>
+                    UUID: {activeDeal.id.slice(0, 13)}... • {activeDeal.num_interactions} Real Interactions Logged
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-secondary text-sm">Loaded default feature telemetry.</span>
+            )}
           </div>
         </div>
+
+        {/* Selected Deal Context Highlight */}
+        {activeDeal && activeDeal.last_interaction && (
+          <div className="glass-card" style={{ padding: '0.875rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderColor: 'rgba(99, 102, 241, 0.3)' }}>
+            <Clock size={16} className="text-primary" />
+            <span className="text-secondary text-sm">
+              <strong style={{ color: 'var(--text-primary)' }}>Most Recent Touchpoint:</strong> "{activeDeal.last_interaction.content}" ({activeDeal.last_interaction.type.toUpperCase()}, {new Date(activeDeal.last_interaction.created_at).toLocaleDateString()})
+            </span>
+          </div>
+        )}
 
         {/* 2-Column Split: Form (Left) | Prediction Result (Right) */}
         <div className="analyze-layout-grid">
@@ -173,7 +202,7 @@ export default function Analyze() {
               <FormSection
                 title="Deal Scope & Stage"
                 icon={BarChart2}
-                description="Contract valuation and current CRM pipeline position."
+                description="Live opportunity valuation and CRM pipeline lifecycle position."
               >
                 <div className="form-row-2">
                   <InputField
@@ -225,7 +254,7 @@ export default function Analyze() {
               <FormSection
                 title="Engagement & Interaction Telemetry"
                 icon={Clock}
-                description="Communication frequency and prospect response latency."
+                description="Communication frequency and prospect response latency measured from dataset."
               >
                 <div className="form-row-2">
                   <InputField
@@ -249,133 +278,146 @@ export default function Analyze() {
                     type="number"
                     min="0"
                     step="1"
-                    suffix="days"
+                    suffix="days ago"
                     required
                     value={features.days_since_last}
                     onChange={handleInputChange}
                     error={validationErrors.days_since_last}
-                    description="Recency gap since prospect's latest touchpoint"
+                    description="Recency of last recorded interaction"
                   />
                 </div>
 
                 <InputField
                   id="avg_response_min"
                   name="avg_response_min"
-                  label="Avg Prospect Response Time"
+                  label="Average Response Latency"
                   type="number"
                   min="0"
-                  step="1"
-                  suffix="min"
+                  step="10"
+                  suffix="mins"
                   required
                   value={features.avg_response_min}
                   onChange={handleInputChange}
                   error={validationErrors.avg_response_min}
-                  description={`Average reply latency (~${formatDuration(features.avg_response_min)})`}
+                  description={`Average customer reply time (${formatDuration(features.avg_response_min || 0)})`}
                 />
               </FormSection>
 
               {/* Section 3: Sentiment Dynamics */}
               <FormSection
-                title="Communication Sentiment Trend"
-                icon={TrendingUp}
-                description="Calculated delta between recent and baseline conversation tone."
+                title="Sentiment Progression"
+                icon={Layers}
+                description="Drift in prospect sentiment derived across chronological interactions."
               >
                 <SliderField
                   id="sentiment_trend"
                   name="sentiment_trend"
-                  label="Sentiment Trend Index (-1.0 to +1.0)"
-                  min={-1.0}
-                  max={1.0}
-                  step={0.05}
+                  label="Sentiment Drift Trend"
+                  min="-1.0"
+                  max="1.0"
+                  step="0.05"
                   value={features.sentiment_trend}
                   onChange={handleSliderChange}
-                  displayFormat={(v) => (Number(v) >= 0 ? `+${Number(v).toFixed(2)}` : Number(v).toFixed(2))}
-                  badge={
-                    <span className={`badge ${sentimentInfo.badgeClass}`}>
-                      {sentimentInfo.label}
-                    </span>
-                  }
-                  error={validationErrors.sentiment_trend}
-                  description={sentimentInfo.description}
+                  leftLabel="-1.0 (Critical Churn)"
+                  centerLabel="0.0 (Neutral)"
+                  rightLabel="+1.0 (Strong Advocacy)"
                 />
+
+                <div
+                  className="sentiment-feedback-box"
+                  style={{
+                    borderLeftColor: sentimentInfo.color,
+                    background: sentimentInfo.bgColor,
+                  }}
+                >
+                  <div className="sentiment-feedback-header">
+                    <span
+                      className="sentiment-status-dot"
+                      style={{ background: sentimentInfo.color }}
+                    />
+                    <strong style={{ color: sentimentInfo.color }}>
+                      {sentimentInfo.label} ({features.sentiment_trend > 0 ? `+${features.sentiment_trend}` : features.sentiment_trend})
+                    </strong>
+                  </div>
+                  <p className="sentiment-feedback-desc">{sentimentInfo.description}</p>
+                </div>
               </FormSection>
 
-              {/* Form Submission Actions */}
-              <div className="form-action-bar">
+              {/* Form Action Controls */}
+              <div className="form-actions-group">
                 <Button
                   type="submit"
                   variant="primary"
                   size="lg"
                   loading={loading}
                   icon={Zap}
-                  id="predict-submit-btn"
-                  style={{ flex: 1 }}
                 >
-                  {loading ? 'Evaluating ML Model...' : 'Calculate Win Probability'}
+                  {loading ? 'Evaluating Model Inferences...' : 'Generate Live ML Prediction'}
                 </Button>
 
                 <Button
                   type="button"
-                  variant="outline"
-                  size="lg"
-                  icon={RotateCcw}
+                  variant="ghost"
+                  size="md"
                   onClick={() => {
-                    setFeatures(DEFAULT_FEATURES);
                     resetPrediction();
+                    if (activeDeal && activeDeal.features) {
+                      setFeatures({
+                        deal_value: activeDeal.features.deal_value || activeDeal.value,
+                        stage: activeDeal.features.stage || activeDeal.stage,
+                        days_in_stage: activeDeal.features.days_in_stage ?? 10,
+                        num_interactions: activeDeal.features.num_interactions ?? activeDeal.num_interactions,
+                        avg_response_min: Math.round(activeDeal.features.avg_response_min ?? 200),
+                        days_since_last: activeDeal.features.days_since_last ?? 2,
+                        sentiment_trend: Number(parseFloat(activeDeal.features.sentiment_trend ?? 0).toFixed(2)),
+                      });
+                    } else {
+                      setFeatures(DEFAULT_FEATURES);
+                    }
                   }}
+                  icon={RotateCcw}
                   disabled={loading}
                 >
-                  Reset
+                  Reset Features
                 </Button>
               </div>
             </form>
           </div>
 
-          {/* Right Column: Prediction Result Display */}
+          {/* Right Column: Prediction Output State */}
           <div className="analyze-result-col">
-            <div className="result-sticky-wrapper">
-              {loading && (
-                <div className="glass-card result-placeholder-box">
-                  <LoadingSpinner
-                    size="lg"
-                    message="Evaluating XGBoost Model"
-                    subtext="Processing 7 telemetry features against calibrated decision thresholds..."
-                  />
-                </div>
-              )}
+            {error && (
+              <ErrorMessage
+                title="ML Inference Error"
+                message={error}
+                onRetry={handleSubmit}
+              />
+            )}
 
-              {!loading && error && (
-                <ErrorMessage
-                  title="Inference Error"
-                  message={error}
-                  onRetry={handleSubmit}
-                />
-              )}
+            {loading && (
+              <div className="result-loading-card glass-card">
+                <LoadingSpinner size="lg" text="Calling XGBoost ML service pipeline on port 8001..." />
+              </div>
+            )}
 
-              {!loading && !error && result && (
-                <PredictionCard
-                  result={result}
-                  onReset={resetPrediction}
-                />
-              )}
+            {!loading && !error && result && (
+              <PredictionCard
+                result={result}
+                prediction={result}
+                features={features}
+                onReset={resetPrediction}
+              />
+            )}
 
-              {!loading && !error && !result && (
-                <EmptyState
-                  icon={Cpu}
-                  title="Ready for Analysis"
-                  description="Adjust the 7 telemetry features on the left or click any preset scenario above, then submit to generate real-time calibrated predictions."
-                  actionLabel="Run Sample Deal"
-                  onAction={() => executePrediction(features)}
-                  actionIcon={Zap}
-                >
-                  <div className="empty-features-preview">
-                    <span className="preview-tag">Value: ${Number(features.deal_value).toLocaleString()}</span>
-                    <span className="preview-tag">Stage: {features.stage}</span>
-                    <span className="preview-tag">Response: {features.avg_response_min}m</span>
-                  </div>
-                </EmptyState>
-              )}
-            </div>
+            {!loading && !error && !result && (
+              <EmptyState
+                icon={Cpu}
+                title="Awaiting Model Evaluation"
+                description="Click 'Generate Live ML Prediction' to run the active feature vector through the trained XGBoost model."
+                actionLabel="Evaluate Current Features"
+                onAction={handleSubmit}
+              />
+            )}
           </div>
         </div>
       </div>

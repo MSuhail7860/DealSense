@@ -2,18 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Cpu,
-  Database,
   Sparkles,
   ShieldAlert,
-  ArrowRight,
-  Activity,
-  Layers,
   Terminal,
-  FileCode2,
   Workflow
 } from 'lucide-react';
 import Button from '../components/Button';
-import SectionHeading from '../components/SectionHeading';
 import './HowItWorks.css';
 
 export default function HowItWorks() {
@@ -36,7 +30,7 @@ export default function HowItWorks() {
         <div className="hiw-arch-diagram glass-card">
           <div className="diagram-header">
             <Terminal size={18} className="text-primary" />
-            <h3 className="diagram-title">Distributed System Architecture</h3>
+            <h2 className="diagram-title">Distributed System Architecture</h2>
           </div>
           <div className="diagram-visual">
             <div className="diag-box diag-frontend">
@@ -199,7 +193,7 @@ export default function HowItWorks() {
               <div className="hiw-callout-box warning">
                 <div className="callout-header">
                   <ShieldAlert size={18} />
-                  <h4>Strict Target Leakage Blocklist (ML.md §4.4)</h4>
+                  <h3>Strict Target Leakage Blocklist (ML.md §4.4)</h3>
                 </div>
                 <p>
                   The training pipeline in <code>ml-service/training/train.py</code> strictly asserts that the following columns

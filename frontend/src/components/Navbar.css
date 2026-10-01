@@ -89,6 +89,11 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+.nav-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .active-nav-link {
   color: #FFFFFF;
   background: rgba(99, 102, 241, 0.15);
@@ -149,8 +154,12 @@
   border: none;
   color: var(--text-primary);
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0.5rem;
   border-radius: var(--radius-sm);
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-toggle-btn:focus-visible {
@@ -202,6 +211,11 @@
 .active-mobile-link {
   color: #FFFFFF;
   background: rgba(99, 102, 241, 0.15);
+}
+
+.mobile-nav-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .mobile-menu-footer {

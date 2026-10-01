@@ -158,12 +158,25 @@
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 0.25rem 0.6rem;
+  padding: 0.4rem 0.75rem;
+  min-height: 38px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preset-tab:hover {
+  color: var(--text-primary);
+}
+
+.preset-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .preset-tab.active {
@@ -231,7 +244,7 @@
   color: #10B981;
 }
 
-.progress-bar-bg {
+.score-bar-track {
   height: 5px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-full);
@@ -239,17 +252,19 @@
   overflow: hidden;
 }
 
-.progress-bar-fill {
+.score-bar-fill {
   height: 100%;
+  width: 100%;
+  transform-origin: left;
   border-radius: var(--radius-full);
-  transition: width 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.progress-bar-fill.emerald {
+.score-bar-fill.win {
   background: linear-gradient(90deg, #10B981, #34D399);
 }
 
-.progress-bar-fill.rose {
+.score-bar-fill.churn {
   background: linear-gradient(90deg, #F43F5E, #FB7185);
 }
 

@@ -2,11 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
-  AlertTriangle,
   Cpu,
   ArrowRight,
   Sparkles,
-  CheckCircle2,
   Clock,
   MessageSquare,
   DollarSign
@@ -17,25 +15,27 @@ import {
   formatCurrency,
   getProbabilityCategory,
   getSentimentDetails,
-  formatDuration,
   getStageBadge
 } from '../utils/formatters';
 import './PredictionCard.css';
 
 export default function PredictionCard({
   result,
+  prediction,
+  features = null,
   onReset = null,
   showActions = true,
   className = '',
 }) {
   const navigate = useNavigate();
+  const activeResult = result || prediction;
 
-  if (!result) return null;
+  if (!activeResult) return null;
 
-  const winProb = Number(result.win_probability);
-  const churnRisk = Number(result.churn_risk);
+  const winProb = Number(activeResult.win_probability);
+  const churnRisk = Number(activeResult.churn_risk);
   const category = getProbabilityCategory(winProb);
-  const inputs = result.inputs || {};
+  const inputs = activeResult.inputs || features || {};
   const stageBadge = inputs.stage ? getStageBadge(inputs.stage) : null;
   const sentiment = inputs.sentiment_trend !== undefined ? getSentimentDetails(inputs.sentiment_trend) : null;
 
@@ -54,10 +54,10 @@ export default function PredictionCard({
           </span>
           <span className="badge badge-primary">
             <Cpu size={12} />
-            {result.model_version || 'xgb-v0.1'}
+            {activeResult.model_version || 'xgb-v0.1'}
           </span>
         </div>
-        {result.isLiveBackend ? (
+        {activeResult.isLiveBackend ? (
           <span className="source-tag source-live" title="Inference from live ML microservice">
             <span className="live-pulse"></span> Live Model
           </span>
@@ -110,7 +110,7 @@ export default function PredictionCard({
             <div className="churn-bar-track">
               <div
                 className="churn-bar-fill"
-                style={{ width: `${Math.min(100, churnRisk * 100)}%` }}
+                style={{ transform: `scaleX(${Math.min(1, Math.max(0, churnRisk))})` }}
               ></div>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function PredictionCard({
           <Button
             variant="primary"
             icon={Sparkles}
-            onClick={() => navigate('/recommendations', { state: { dealResult: result } })}
+            onClick={() => navigate('/recommendations', { state: { dealResult: activeResult } })}
           >
             Get Copilot Recommendations
           </Button>
@@ -184,7 +184,7 @@ export default function PredictionCard({
             variant="outline"
             icon={ArrowRight}
             iconPosition="right"
-            onClick={() => navigate('/results', { state: { dealResult: result } })}
+            onClick={() => navigate('/results', { state: { dealResult: activeResult } })}
           >
             Deep Diagnostics
           </Button>

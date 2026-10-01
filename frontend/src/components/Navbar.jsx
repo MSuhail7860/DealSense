@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import {
   TrendingUp,
   Cpu,
@@ -10,8 +10,7 @@ import {
   Menu,
   X,
   Sparkles,
-  Zap,
-  Activity
+  Zap
 } from 'lucide-react';
 import Button from './Button';
 import { useHealth } from '../hooks/useHealth';
@@ -19,10 +18,21 @@ import './Navbar.css';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
-  const { mlStatus, backendStatus } = useHealth();
+  const { mlStatus } = useHealth();
 
   const closeMenu = () => setMobileMenuOpen(false);
+
+  // Close mobile drawer on Escape key press
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeMenu();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   const navLinks = [
     { to: '/', label: 'Home', icon: TrendingUp },
@@ -77,7 +87,7 @@ export default function Navbar() {
           >
             <span className="status-ping"></span>
             <span className="status-label">
-              {mlStatus.ok ? 'ML Live' : 'Calibrated Mode'}
+              {mlStatus.ok ? 'ML Live' : 'Service Offline'}
             </span>
           </div>
 
@@ -93,8 +103,9 @@ export default function Navbar() {
           type="button"
           className="mobile-toggle-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? 'Close Menu' : 'Open Menu'}
+          aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
           aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation-drawer"
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -104,6 +115,10 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="mobile-menu-overlay" onClick={closeMenu}>
           <div
+            id="mobile-navigation-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile Navigation Menu"
             className="mobile-menu-drawer glass-card"
             onClick={(e) => e.stopPropagation()}
           >

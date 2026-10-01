@@ -75,16 +75,35 @@
   color: var(--text-muted);
 }
 
-/* Variants */
+/* Variants: subtle border highlight & coordinated icon tinting */
 .variant-emerald {
-  border-left: 3px solid var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.25);
 }
+.variant-emerald .metric-icon-box {
+  background: var(--accent-emerald-light);
+  color: #6EE7B7;
+}
+
 .variant-rose {
-  border-left: 3px solid var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.25);
 }
+.variant-rose .metric-icon-box {
+  background: var(--accent-rose-light);
+  color: #FDA4AF;
+}
+
 .variant-primary {
-  border-left: 3px solid var(--primary);
+  border-color: rgba(99, 102, 241, 0.25);
 }
+.variant-primary .metric-icon-box {
+  background: var(--primary-light);
+  color: #A5B4FC;
+}
+
 .variant-amber {
-  border-left: 3px solid var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.variant-amber .metric-icon-box {
+  background: var(--accent-amber-light);
+  color: #FCD34D;
 }

@@ -25,7 +25,17 @@ export default function MetricCard({
 
       <div className="metric-body">
         <div className="metric-value">{value}</div>
-        {badge && <div className="metric-badge-container">{badge}</div>}
+        {badge && (
+          <div className="metric-badge-container">
+            {typeof badge === 'object' && badge !== null && 'label' in badge ? (
+              <span className={`badge ${badge.color || 'badge-primary'}`}>{badge.label}</span>
+            ) : typeof badge === 'string' ? (
+              <span className="badge badge-primary">{badge}</span>
+            ) : (
+              badge
+            )}
+          </div>
+        )}
       </div>
 
       {(subtitle || trend !== null) && (

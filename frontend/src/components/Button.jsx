@@ -13,6 +13,7 @@ export default function Button({
   onClick,
   className = '',
   id,
+  fullWidth = false,
   ...props
 }) {
   return (
@@ -20,8 +21,9 @@ export default function Button({
       id={id}
       type={type}
       disabled={disabled || loading}
+      aria-busy={loading ? 'true' : undefined}
       onClick={onClick}
-      className={`btn btn-${variant} btn-${size} ${loading ? 'btn-loading' : ''} ${className}`}
+      className={`btn btn-${variant} btn-${size} ${fullWidth ? 'btn-full-width' : ''} ${loading ? 'btn-loading' : ''} ${className}`}
       {...props}
     >
       {loading && (

@@ -23,6 +23,7 @@ export function useCopilot() {
       
       const newSuggestion = {
         ...data,
+        id: data.id ? `${data.id}-${Date.now()}` : `rec-${Date.now()}`,
         dealContext: dealContext || null,
       };
 

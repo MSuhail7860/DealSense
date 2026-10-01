@@ -6,9 +6,7 @@ import {
   Check,
   Clock,
   Layers,
-  FileText,
-  Calendar,
-  ExternalLink
+  FileText
 } from 'lucide-react';
 import Button from './Button';
 import './RecommendationCard.css';

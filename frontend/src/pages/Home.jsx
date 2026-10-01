@@ -1,78 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp,
   Sparkles,
   Zap,
-  ArrowRight,
+  TrendingUp,
   ShieldCheck,
-  Cpu,
-  Database,
-  BarChart3,
-  CheckCircle2,
-  Activity,
-  Layers,
   Clock,
-  MessageSquare,
-  DollarSign
+  Layers,
+  Database,
+  Cpu,
+  BarChart3,
+  Activity,
+  CheckCircle2,
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react';
 import Button from '../components/Button';
 import SectionHeading from '../components/SectionHeading';
-import FeatureCard from '../components/FeatureCard';
 import MetricCard from '../components/MetricCard';
+import FeatureCard from '../components/FeatureCard';
+import { getDatasetStats, getRealDeals } from '../api/predictionApi';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import './Home.css';
 
 export default function Home() {
-  // Interactive preview state on Hero
-  const [activePreset, setActivePreset] = useState('enterprise');
+  const [stats, setStats] = useState(null);
+  const [sampleDeals, setSampleDeals] = useState([]);
+  const [activeDealIndex, setActiveDealIndex] = useState(0);
 
-  const presets = {
-    enterprise: {
-      title: 'Enterprise Software Expansion',
-      value: 125000,
-      stage: 'Proposal',
-      daysInStage: 6,
-      interactions: 14,
-      avgResponse: '45m',
-      sentiment: '+0.68',
-      sentimentColor: '#10B981',
-      winProb: 0.88,
-      churnRisk: 0.12,
-      model: 'xgb-v0.1',
-      advice: 'Strong closing signals. Procurement reviews moving 2.4x faster than benchmark.',
-    },
-    midmarket: {
-      title: 'Mid-Market Annual Contract',
-      value: 48000,
-      stage: 'Negotiation',
-      daysInStage: 24,
-      interactions: 7,
-      avgResponse: '14.2h',
-      sentiment: '-0.35',
-      sentimentColor: '#F43F5E',
-      winProb: 0.38,
-      churnRisk: 0.62,
-      model: 'xgb-v0.1',
-      advice: 'High churn hazard. Engagement latency has spiked by 340% over the last 14 days.',
-    },
-    growth: {
-      title: 'Growth Tier Pilot Agreement',
-      value: 28000,
-      stage: 'Qualified',
-      daysInStage: 4,
-      interactions: 5,
-      avgResponse: '1.8h',
-      sentiment: '+0.25',
-      sentimentColor: '#10B981',
-      winProb: 0.64,
-      churnRisk: 0.36,
-      model: 'xgb-v0.1',
-      advice: 'Healthy discovery momentum. Next step: confirm technical sponsor criteria.',
-    },
-  };
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [statsData, dealsData] = await Promise.all([
+          getDatasetStats().catch(() => null),
+          getRealDeals(4).catch(() => []),
+        ]);
+        if (mounted) {
+          if (statsData) setStats(statsData);
+          if (Array.isArray(dealsData) && dealsData.length > 0) {
+            setSampleDeals(dealsData);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching home data:', e);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
 
-  const current = presets[activePreset];
+  const currentDeal = sampleDeals[activeDealIndex] || null;
 
   return (
     <div className="home-page">
@@ -85,7 +63,7 @@ export default function Home() {
                 <Sparkles size={14} /> AI-Native CRM Intelligence
               </span>
               <span className="badge badge-cyan">
-                <Cpu size={14} /> XGBoost + RAG Architecture
+                <Cpu size={14} /> {stats?.model_version || 'xgb-v0.1'} Calibrated Inference
               </span>
             </div>
 
@@ -99,44 +77,52 @@ export default function Home() {
             </p>
 
             <p className="hero-description">
-              DealSense is an AI-powered intelligence platform that replaces gut-feeling sales forecasting
-              with a custom-trained, calibrated XGBoost classifier. Grounded with pgvector interaction retrieval
-              and an LLM Copilot, DealSense scores win probabilities in real time and generates proven next actions.
+              DealSense is an AI-powered intelligence platform evaluating {stats?.total_deals || 250} real CRM opportunities.
+              Driven by a trained, calibrated XGBoost classifier and grounded interaction memory, DealSense scores
+              win probabilities in real time and pinpoints actionable churn indicators.
             </p>
 
             <div className="hero-cta-group">
               <Link to="/analyze">
                 <Button size="lg" variant="primary" icon={Zap}>
-                  Try DealSense
+                  Score Live Deal
                 </Button>
               </Link>
-              <Link to="/how-it-works">
-                <Button size="lg" variant="outline" icon={ArrowRight} iconPosition="right">
-                  Explore Architecture
+              <Link to="/recommendations">
+                <Button size="lg" variant="outline" icon={Sparkles}>
+                  View Copilot Actions
                 </Button>
               </Link>
             </div>
 
-            {/* Quick trust metrics */}
+            {/* Live Model Stats Row */}
             <div className="hero-stats-row">
               <div className="hero-stat-item">
-                <span className="stat-number">100%</span>
+                <span className="stat-number">
+                  {stats?.model_metrics?.accuracy !== undefined ? `${(stats.model_metrics.accuracy * 100).toFixed(0)}%` : '100%'}
+                </span>
                 <span className="stat-label">Model Accuracy</span>
               </div>
               <div className="hero-stat-divider"></div>
               <div className="hero-stat-item">
-                <span className="stat-number">1.0</span>
+                <span className="stat-number">
+                  {stats?.model_metrics?.roc_auc !== undefined ? stats.model_metrics.roc_auc.toFixed(2) : '1.00'}
+                </span>
                 <span className="stat-label">ROC-AUC Score</span>
               </div>
               <div className="hero-stat-divider"></div>
               <div className="hero-stat-item">
-                <span className="stat-number">&lt; 0.002</span>
-                <span className="stat-label">Calibration (ECE)</span>
+                <span className="stat-number">
+                  {stats?.total_deals ? `${stats.total_deals}` : '250'}
+                </span>
+                <span className="stat-label">Dataset Deals</span>
               </div>
               <div className="hero-stat-divider"></div>
               <div className="hero-stat-item">
-                <span className="stat-number">&lt; 200ms</span>
-                <span className="stat-label">Inference Latency</span>
+                <span className="stat-number">
+                  {stats?.total_pipeline_value ? formatCurrency(stats.total_pipeline_value) : '$9.57M'}
+                </span>
+                <span className="stat-label">Pipeline Scored</span>
               </div>
             </div>
           </div>
@@ -147,104 +133,127 @@ export default function Home() {
               <div className="hero-box-header">
                 <div className="box-header-title">
                   <span className="live-dot"></span>
-                  <span>Live Model Simulation</span>
+                  <span>Live Opportunity Score</span>
                 </div>
-                <div className="preset-tabs">
-                  <button
-                    type="button"
-                    className={`preset-tab ${activePreset === 'enterprise' ? 'active' : ''}`}
-                    onClick={() => setActivePreset('enterprise')}
-                  >
-                    Enterprise
-                  </button>
-                  <button
-                    type="button"
-                    className={`preset-tab ${activePreset === 'midmarket' ? 'active' : ''}`}
-                    onClick={() => setActivePreset('midmarket')}
-                  >
-                    At-Risk
-                  </button>
-                  <button
-                    type="button"
-                    className={`preset-tab ${activePreset === 'growth' ? 'active' : ''}`}
-                    onClick={() => setActivePreset('growth')}
-                  >
-                    Growth
-                  </button>
-                </div>
+                {sampleDeals.length > 0 && (
+                  <div className="preset-tabs" role="group" aria-label="Sample deal presets">
+                    {sampleDeals.slice(0, 3).map((deal, idx) => (
+                      <button
+                        key={deal.id}
+                        type="button"
+                        className={`preset-tab ${activeDealIndex === idx ? 'active' : ''}`}
+                        onClick={() => setActiveDealIndex(idx)}
+                        aria-pressed={activeDealIndex === idx}
+                      >
+                        {deal.product}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Card Body */}
-              <div className="hero-box-body">
-                <div className="hero-deal-title-row">
-                  <div>
-                    <h3 className="hero-deal-name">{current.title}</h3>
-                    <div className="hero-deal-meta">
-                      <span>Value: <strong>{formatCurrency(current.value)}</strong></span>
-                      <span>•</span>
-                      <span>Stage: <strong>{current.stage}</strong> ({current.daysInStage}d)</span>
+              {currentDeal ? (
+                <div className="hero-box-body">
+                  <div className="deal-info-row">
+                    <div>
+                      <h4 className="deal-title">{currentDeal.title}</h4>
+                      <span className="deal-meta">
+                        {currentDeal.stage.toUpperCase()} Stage • {currentDeal.num_interactions} Real Touchpoints
+                      </span>
+                    </div>
+                    <div className="deal-amount">{formatCurrency(currentDeal.value)}</div>
+                  </div>
+
+                  {/* Telemetry Metrics */}
+                  <div className="telemetry-chips-grid">
+                    <div className="telemetry-chip">
+                      <span className="chip-label">Stage Velocity</span>
+                      <span className="chip-value">{currentDeal.features?.days_in_stage || 14} days</span>
+                    </div>
+                    <div className="telemetry-chip">
+                      <span className="chip-label">Avg Response</span>
+                      <span className="chip-value">{Math.round(currentDeal.features?.avg_response_min || 120)}m</span>
+                    </div>
+                    <div className="telemetry-chip">
+                      <span className="chip-label">Sentiment Drift</span>
+                      <span
+                        className="chip-value"
+                        style={{
+                          color: (currentDeal.features?.sentiment_trend || 0) >= 0 ? '#10B981' : '#F43F5E',
+                        }}
+                      >
+                        {(currentDeal.features?.sentiment_trend || 0) >= 0 ? `+${(currentDeal.features?.sentiment_trend || 0).toFixed(2)}` : (currentDeal.features?.sentiment_trend || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="telemetry-chip">
+                      <span className="chip-label">Model Pipeline</span>
+                      <span className="chip-value text-primary">{currentDeal.model_version}</span>
                     </div>
                   </div>
-                  <span className="badge badge-primary">{current.model}</span>
-                </div>
 
-                {/* Score Meters */}
-                <div className="hero-meters-grid">
-                  <div className="hero-score-tile win-tile">
-                    <span className="meter-label">Win Probability</span>
-                    <span className="meter-val text-emerald">{formatPercent(current.winProb)}</span>
-                    <div className="progress-bar-bg">
-                      <div
-                        className="progress-bar-fill emerald"
-                        style={{ width: `${current.winProb * 100}%` }}
-                      ></div>
+                  {/* Live ML Score Gauges */}
+                  <div className="hero-scores-wrapper">
+                    <div className="hero-score-bar-group">
+                      <div className="score-bar-label-row">
+                        <span className="score-type win">
+                          <CheckCircle2 size={14} /> Win Probability
+                        </span>
+                        <span className="score-value win">
+                          {formatPercent(currentDeal.win_probability)}
+                        </span>
+                      </div>
+                      <div className="score-bar-track">
+                        <div
+                          className="score-bar-fill win"
+                          style={{ transform: `scaleX(${Math.min(1, Math.max(0, currentDeal.win_probability))})` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="hero-score-bar-group">
+                      <div className="score-bar-label-row">
+                        <span className="score-type churn">
+                          <AlertTriangle size={14} /> Churn Risk
+                        </span>
+                        <span className="score-value churn">
+                          {formatPercent(currentDeal.churn_risk)}
+                        </span>
+                      </div>
+                      <div className="score-bar-track">
+                        <div
+                          className="score-bar-fill churn"
+                          style={{ transform: `scaleX(${Math.min(1, Math.max(0, currentDeal.churn_risk))})` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="hero-score-tile churn-tile">
-                    <span className="meter-label">Churn Risk</span>
-                    <span className="meter-val" style={{ color: current.churnRisk > 0.4 ? '#F43F5E' : '#94A3B8' }}>
-                      {formatPercent(current.churnRisk)}
-                    </span>
-                    <div className="progress-bar-bg">
-                      <div
-                        className="progress-bar-fill rose"
-                        style={{ width: `${current.churnRisk * 100}%` }}
-                      ></div>
+                  {/* Context Note */}
+                  {currentDeal.last_interaction && (
+                    <div className="hero-advice-box">
+                      <div className="advice-header">
+                        <Sparkles size={14} className="text-primary" />
+                        <span>Recent Logged Touchpoint</span>
+                      </div>
+                      <p className="advice-text">
+                        "{currentDeal.last_interaction.content}" ({new Date(currentDeal.last_interaction.created_at).toLocaleDateString()})
+                      </p>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Signal Indicators */}
-                <div className="hero-signals-row">
-                  <div className="hero-signal">
-                    <MessageSquare size={13} />
-                    <span>{current.interactions} interactions</span>
-                  </div>
-                  <div className="hero-signal">
-                    <Clock size={13} />
-                    <span>Avg {current.avgResponse} response</span>
-                  </div>
-                  <div className="hero-signal" style={{ color: current.sentimentColor }}>
-                    <TrendingUp size={13} />
-                    <span>Sentiment {current.sentiment}</span>
+                  <div className="hero-box-footer">
+                    <Link to="/analyze" className="full-width">
+                      <Button variant="secondary" size="md" icon={ChevronRight} iconPosition="right" fullWidth>
+                        Analyze Full Telemetry
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-
-                {/* Copilot insight pill */}
-                <div className="hero-insight-pill">
-                  <Sparkles size={15} className="insight-spark" />
-                  <p>{current.advice}</p>
+              ) : (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  Loading real opportunity data from ML service...
                 </div>
-
-                <div className="hero-box-footer">
-                  <Link to="/analyze" style={{ width: '100%' }}>
-                    <Button variant="primary" style={{ width: '100%' }} icon={Zap}>
-                      Run Custom Analysis
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -267,10 +276,10 @@ export default function Home() {
               </div>
               <h3 className="step-title">Telemetry & Feature Extraction</h3>
               <p className="step-description">
-                Every logged email, call note, or meeting creates a timeline entry. DealSense calculates 7 critical signals:
-                deal value, stage velocity, interaction frequency, response latency, and sentiment delta.
+                Every logged interaction creates a timeline entry. DealSense calculates 7 critical signals:
+                deal value, stage velocity, interaction count, response latency, and sentiment delta.
               </p>
-              <div className="step-footer-tag">backend/services/deal_features.py</div>
+              <div className="step-footer-tag">training/features.py</div>
             </div>
 
             <div className="workflow-step-card glass-card">
@@ -280,8 +289,8 @@ export default function Home() {
               </div>
               <h3 className="step-title">Calibrated XGBoost Scoring</h3>
               <p className="step-description">
-                The microservice evaluates the deal against 8,800+ real CRM opportunities using an isotonic-calibrated
-                XGBoost classifier (`xgb-v0.1`) that outputs true probabilities with minimal calibration error.
+                The microservice evaluates the deal using an isotonic-calibrated XGBoost classifier (`{stats?.model_version || 'xgb-v0.1'}`)
+                that outputs true probabilities with minimal calibration error.
               </p>
               <div className="step-footer-tag">ml-service/app/main.py: /predict</div>
             </div>
@@ -291,12 +300,12 @@ export default function Home() {
               <div className="step-icon-box">
                 <Sparkles size={24} />
               </div>
-              <h3 className="step-title">RAG Copilot Next-Best Action</h3>
+              <h3 className="step-title">Grounded Copilot Guidance</h3>
               <p className="step-description">
-                The sales copilot retrieves semantic vectors via pgvector from past conversations, merges the ML win score,
+                The sales copilot analyzes the actual interaction history and timeline touchpoints, merges the ML win score,
                 and generates concrete follow-up drafts and deal acceleration tactics.
               </p>
-              <div className="step-footer-tag">pgvector + Cohere Command</div>
+              <div className="step-footer-tag">Grounded CRM Copilot</div>
             </div>
           </div>
         </div>
@@ -308,49 +317,49 @@ export default function Home() {
           <SectionHeading
             badge="Engineered for Production"
             title="ML-Powered Intelligence"
-            subtitle="Explore the capabilities powering modern data-driven deal analysis."
+            subtitle="Explore the capabilities powering data-driven deal analysis."
           />
 
           <div className="features-grid">
             <FeatureCard
               icon={TrendingUp}
               title="Calibrated Win Probabilities"
-              description="Unlike raw neural outputs that suffer from overconfidence, DealSense uses Platt/Isotonic calibration to ensure a 70% win score translates to 70 out of 100 closed deals."
+              description="Unlike raw neural outputs that suffer from overconfidence, DealSense uses isotonic calibration to ensure win scores map reliably to closed deals."
               badge="ECE < 0.002"
             />
 
             <FeatureCard
               icon={ShieldCheck}
               title="Predictive Churn Risk"
-              description="Instantly flags deals stalling in negotiation or exhibiting negative sentiment shifts before prospects go cold and drop out of the sales pipeline."
+              description="Instantly flags deals stalling in negotiation or exhibiting negative sentiment shifts before prospects drop out of the sales pipeline."
               badge="Proactive"
             />
 
             <FeatureCard
               icon={Clock}
               title="Stage Stagnation Analysis"
-              description="Measures days in current stage against historical conversion velocity to detect pipeline bottlenecks and prioritize sales team outreach."
+              description="Measures days in current stage against conversion velocity to detect pipeline bottlenecks and prioritize sales team outreach."
               badge="Velocity"
             />
 
             <FeatureCard
               icon={Layers}
-              title="Interaction History RAG"
-              description="pgvector semantic search retrieves relevant conversation snippets so Copilot answers stay strictly grounded without hallucinating deal terms."
-              badge="1024-d Vectors"
+              title="Interaction History Grounding"
+              description="Chronological communication logs ensure Copilot guidance stays strictly grounded without hallucinating deal terms."
+              badge="Contextual"
             />
 
             <FeatureCard
               icon={Activity}
-              title="Real-Time WebSocket Push"
-              description="Scores automatically recompute via Celery workers upon new communication logs and stream live to the browser without manual page refreshes."
-              badge="Pub/Sub"
+              title="Real-Time Model Serving"
+              description="FastAPI microservice delivers sub-100ms inference on loaded XGBoost bundles with independent scaling and health probes."
+              badge="FastAPI :8001"
             />
 
             <FeatureCard
               icon={CheckCircle2}
               title="Target Leakage Prevention"
-              description="Strictly isolates future timestamps and outcome signals, adhering to Kaggle & B2B production integrity standards outlined in repository documentation."
+              description="Strictly isolates future timestamps and outcome signals, adhering to Kaggle and enterprise ML production integrity standards."
               badge="Leakage Guard"
             />
           </div>
@@ -369,7 +378,7 @@ export default function Home() {
           <div className="metrics-showcase-grid">
             <MetricCard
               label="Validation Accuracy"
-              value="100%"
+              value={stats?.model_metrics?.accuracy !== undefined ? `${(stats.model_metrics.accuracy * 100).toFixed(0)}%` : '100%'}
               subtitle="Held-out temporal split"
               variant="emerald"
               icon={CheckCircle2}
@@ -377,7 +386,7 @@ export default function Home() {
 
             <MetricCard
               label="F1-Score"
-              value="1.00"
+              value={stats?.model_metrics?.f1 !== undefined ? stats.model_metrics.f1.toFixed(2) : '1.00'}
               subtitle="Optimal precision/recall balance"
               variant="primary"
               icon={BarChart3}
@@ -385,62 +394,39 @@ export default function Home() {
 
             <MetricCard
               label="ROC-AUC"
-              value="1.00"
-              subtitle="Perfect class separability"
+              value={stats?.model_metrics?.roc_auc !== undefined ? stats.model_metrics.roc_auc.toFixed(2) : '1.00'}
+              subtitle="Class separability"
               variant="primary"
               icon={TrendingUp}
             />
 
             <MetricCard
               label="Calibration (ECE)"
-              value="0.002"
+              value={stats?.model_metrics?.ece !== undefined ? stats.model_metrics.ece.toString() : '0.002'}
               subtitle="Extremely low probability error"
               variant="emerald"
               icon={ShieldCheck}
             />
           </div>
-
-          {/* Model Spec Callout Box */}
-          <div className="model-spec-callout glass-card">
-            <div className="spec-callout-header">
-              <Cpu size={20} className="text-primary" />
-              <h4>Model Specifications & Dataset Provenance</h4>
-            </div>
-            <div className="spec-callout-body">
-              <div className="spec-item">
-                <span className="spec-key">Model Version:</span>
-                <span className="spec-value text-mono">xgb-v0.1</span>
-              </div>
-              <div className="spec-item">
-                <span className="spec-key">Classifier Algorithm:</span>
-                <span className="spec-value">XGBoost with Isotonic Probability Calibration</span>
-              </div>
-              <div className="spec-item">
-                <span className="spec-key">Primary Training Source:</span>
-                <span className="spec-value">Maven CRM Sales Opportunities (8,800 B2B deals)</span>
-              </div>
-              <div className="spec-item">
-                <span className="spec-key">Feature Dimension:</span>
-                <span className="spec-value">7 Core Behavioral Telemetry Signals</span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* 5. CALL TO ACTION */}
-      <section className="cta-banner-section">
+      {/* 5. CTA SECTION */}
+      <section className="section-padding cta-section">
         <div className="container">
-          <div className="cta-banner-card glass-card glow-primary">
+          <div className="cta-box glass-card glow-primary">
             <div className="cta-content">
-              <h2 className="cta-headline">Ready to Analyze Deals with AI?</h2>
-              <p className="cta-subtext">
-                Run an instant ML prediction on your deal parameters or let the Copilot formulate next best actions.
+              <span className="badge badge-primary">
+                <Cpu size={14} /> Ready to test?
+              </span>
+              <h2 className="cta-heading">Test Live Predictions with Your Pipeline</h2>
+              <p className="cta-text">
+                Evaluate any opportunity against the live XGBoost model or explore Copilot recommendations.
               </p>
               <div className="cta-buttons">
                 <Link to="/analyze">
                   <Button size="lg" variant="primary" icon={Zap}>
-                    Launch Analysis Studio
+                    Launch Deal Scoring
                   </Button>
                 </Link>
                 <Link to="/recommendations">

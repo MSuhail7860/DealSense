@@ -12,11 +12,18 @@ export default function SliderField({
   step = 1,
   description = '',
   displayFormat = (val) => val,
+  leftLabel = null,
+  centerLabel = null,
+  rightLabel = null,
   badge = null,
   error = '',
   required = false,
   className = '',
 }) {
+  const numMin = Number(min);
+  const numMax = Number(max);
+  const midVal = (numMin + numMax) / 2;
+
   return (
     <div className={`form-field ${error ? 'has-error' : ''} ${className}`}>
       <div className="field-header">
@@ -34,17 +41,24 @@ export default function SliderField({
           id={id}
           name={name || id}
           type="range"
-          min={min}
-          max={max}
+          min={numMin}
+          max={numMax}
           step={step}
           value={value}
           onChange={onChange}
+          aria-valuemin={numMin}
+          aria-valuemax={numMax}
+          aria-valuenow={Number(value)}
+          aria-valuetext={String(displayFormat(value))}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : description ? `${id}-desc` : undefined}
+          aria-required={required}
           className="slider-control"
         />
         <div className="slider-ticks">
-          <span>{displayFormat(min)}</span>
-          <span>{displayFormat((min + max) / 2)}</span>
-          <span>{displayFormat(max)}</span>
+          <span>{leftLabel || displayFormat(numMin)}</span>
+          <span>{centerLabel || displayFormat(midVal)}</span>
+          <span>{rightLabel || displayFormat(numMax)}</span>
         </div>
       </div>
 

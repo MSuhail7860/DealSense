@@ -64,12 +64,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.85rem;
+  padding: 0.5rem 0.9rem;
+  min-height: 44px;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 0.825rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -79,6 +80,11 @@
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-color: var(--border-hover);
+}
+
+.deal-pill:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .deal-pill.active {
@@ -184,18 +190,26 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 0.775rem;
-  padding: 0.25rem 0.65rem;
+  font-size: 0.825rem;
+  padding: 0.45rem 0.85rem;
+  min-height: 40px;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
   text-align: left;
+  display: inline-flex;
+  align-items: center;
 }
 
 .prompt-chip-btn:hover {
   background: rgba(99, 102, 241, 0.12);
   border-color: rgba(99, 102, 241, 0.35);
   color: var(--text-primary);
+}
+
+.prompt-chip-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Feed Header */
@@ -211,6 +225,7 @@
 .rec-feed-tabs {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .feed-tab {
@@ -220,13 +235,22 @@
   font-size: 0.875rem;
   font-weight: 600;
   padding: 0.5rem 0.85rem;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .feed-tab:hover {
   color: var(--text-primary);
+}
+
+.feed-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .feed-tab.active {

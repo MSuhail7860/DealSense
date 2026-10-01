@@ -1,7 +1,8 @@
-// Centralized API configuration and request handler for DealSense
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const ML_API_BASE_URL = import.meta.env.VITE_ML_API_BASE_URL || 'http://localhost:8001';
+// In browser development, relative URLs route through Vite's dev server proxy,
+// eliminating any browser CORS hurdles. If explicit env vars are set, use those.
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isDev ? '' : 'http://localhost:8000');
+const ML_API_BASE_URL = import.meta.env.VITE_ML_API_BASE_URL || (isDev ? '/ml' : 'http://localhost:8001');
 const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/scores';
 
 export { API_BASE_URL, ML_API_BASE_URL, WS_BASE_URL };

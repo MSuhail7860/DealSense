@@ -150,13 +150,16 @@
 .rec-action-icon-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.4rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 0.35rem 0.65rem;
+  padding: 0.5rem 0.85rem;
+  min-height: 44px;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.825rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -165,6 +168,11 @@
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-color: var(--border-hover);
+}
+
+.rec-action-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .text-emerald {

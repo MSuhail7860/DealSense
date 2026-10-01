@@ -25,9 +25,12 @@ function ScrollToTop() {
 export default function App() {
   return (
     <Router>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <ScrollToTop />
       <Navbar />
-      <main className="app-main">
+      <main id="main-content" className="app-main" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/analyze" element={<Analyze />} />
